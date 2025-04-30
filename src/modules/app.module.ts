@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthModule } from './auth/auth.module';
 import { ShopModule } from './shop/shop.module';
+
+import { Shop } from './shop/entities/shop.entity';
 
 @Module({
   imports: [
@@ -10,6 +13,13 @@ import { ShopModule } from './shop/shop.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env.local', '.env.development', '.env.production'],
+    }),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      url: new ConfigService().getOrThrow('SUPABASE_URL'),
+      ssl: { rejectUnauthorized: false }, // Supabase requires SSL
+      entities: [Shop],
+      synchronize: true, // turn off in production
     }),
     ShopModule,
   ],
