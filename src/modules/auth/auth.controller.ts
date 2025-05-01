@@ -12,7 +12,7 @@ import { randomBytes } from 'crypto';
 import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
 
-@Controller('auth/shopify')
+@Controller('auth')
 export class AuthController {
   constructor(
     private readonly config: ConfigService,
@@ -27,7 +27,7 @@ export class AuthController {
     };
   }
 
-  @Get()
+  @Get('shopify')
   redirectToShopify(
     @Query('shop') shop: string,
     @Session() session: Record<string, any>,
@@ -48,8 +48,8 @@ export class AuthController {
     res.redirect(`https://${shop}/admin/oauth/authorize?${params}`);
   }
 
-  @Get('callback')
-  async handleCallback(
+  @Get('shopify/callback')
+  async handleShopifyCallback(
     @Query('shop') shop: string,
     @Query('code') code: string,
     @Query('state') state: string,
