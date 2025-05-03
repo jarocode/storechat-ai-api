@@ -2,6 +2,7 @@
 import {
   Controller,
   Get,
+  Logger,
   Query,
   Res,
   Session,
@@ -14,6 +15,8 @@ import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+  private readonly frontendURL = this.config.getOrThrow('FRONTEND_URL');
   constructor(
     private readonly config: ConfigService,
     private readonly auth: AuthService,
@@ -58,11 +61,14 @@ export class AuthController {
     @Res() res: Response,
   ) {
     // 3. validate state
+    this.logger.log('validating state...');
     if (state !== session.shopifyState) {
       throw new UnauthorizedException('Invalid state');
     }
+    this.logger.log('state validated successfully');
 
     // 4. verify HMAC
+    this.logger.log('validating HMAC...');
     const map = { ...res.req.query };
     delete map.hmac;
     delete map.signature;
@@ -75,18 +81,23 @@ export class AuthController {
     if (!this.auth.timingSafeEqual(generated, hmac)) {
       throw new UnauthorizedException('HMAC validation failed');
     }
+    this.logger.log('HMAC validated successfully');
 
     // 5. exchange code for access token
     const accessToken = await this.auth.fetchAccessToken(shop, code);
 
     // 6. persist shop + token in your DB
+    this.logger.log('saving shop token data to DB...');
     await this.auth.saveShop(shop, accessToken);
+    this.logger.log('Shop token data successfully saved to DB');
 
     // 7. set a session or JWT cookie for your own auth
+    this.logger.log('setting jwt cookie to auth...');
     const jwt = this.auth.signJwt({ shop });
     res.cookie('jwt', jwt, { httpOnly: true, secure: true });
 
-    // 8. redirect back to your Next.js dashboard
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard?shop=${shop}`);
+    // 8. redirect back to your Next.js onboarding page
+    res.redirect(`${this.frontendURL}/onboarding`);
+    this.logger.log('shopify authentication flow completed successfully');
   }
 }
