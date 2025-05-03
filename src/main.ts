@@ -18,7 +18,7 @@ async function bootstrap() {
       secret: configService.get<string>('SESSION_SECRET'),
       resave: false,
       saveUninitialized: false,
-      cookie: { secure: true, httpOnly: true, sameSite: 'none' },
+      cookie: { secure: true, httpOnly: true, sameSite: 'lax' },
     }),
   );
   const PORT = configService.getOrThrow<number>('PORT');
