@@ -62,7 +62,9 @@ export class AuthController {
   ) {
     // 3. validate state
     this.logger.log('validating state...');
-    if (state !== session.shopifyState) {
+    this.logger.log('passed state:', state);
+    this.logger.log('saved session state:', session?.shopifyState);
+    if (state !== session?.shopifyState) {
       throw new UnauthorizedException('Invalid state');
     }
     this.logger.log('state validated successfully');
