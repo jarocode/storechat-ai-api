@@ -1,11 +1,27 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
+import * as cookieParser from 'cookie-parser';
+import * as session from 'express-session';
 
 import { AppModule } from './modules/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const PORT = new ConfigService().getOrThrow<number>('PORT');
+
+  // grab ConfigService from Nest’s DI container
+  const configService = app.get(ConfigService);
+
+  app.use(cookieParser());
+
+  app.use(
+    session({
+      secret: configService.get<string>('SESSION_SECRET'),
+      resave: false,
+      saveUninitialized: false,
+      cookie: { secure: true, httpOnly: true },
+    }),
+  );
+  const PORT = configService.getOrThrow<number>('PORT');
   await app.listen(PORT, () => console.log(`Server running on PORT ${PORT}`));
 }
 bootstrap();
