@@ -11,6 +11,12 @@ async function bootstrap() {
   // grab ConfigService from Nest’s DI container
   const configService = app.get(ConfigService);
 
+  // 1. Enable CORS if any front-end is on a different origin
+  app.enableCors({
+    origin: configService.getOrThrow<string>('FRONTEND_URL'),
+    credentials: true,
+  });
+
   app.use(cookieParser());
 
   app.use(
