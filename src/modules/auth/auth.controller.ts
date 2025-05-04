@@ -22,14 +22,6 @@ export class AuthController {
     private readonly auth: AuthService,
   ) {}
 
-  @Get('health-check')
-  healthCheck() {
-    return {
-      status: true,
-      message: 'server works fine!',
-    };
-  }
-
   @Get('shopify')
   redirectToShopify(
     @Query('shop') shop: string,
