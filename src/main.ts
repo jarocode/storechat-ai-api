@@ -1,12 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import * as cookieParser from 'cookie-parser';
 import * as session from 'express-session';
 
 import { AppModule } from './modules/app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // grab ConfigService from Nest’s DI container
   const configService = app.get(ConfigService);
@@ -16,6 +17,9 @@ async function bootstrap() {
     origin: configService.getOrThrow<string>('FRONTEND_URL'),
     credentials: true,
   });
+
+  //To trust proxy
+  app.set('trust proxy', 1);
 
   app.use(cookieParser());
 
