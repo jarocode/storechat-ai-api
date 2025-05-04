@@ -37,6 +37,14 @@ async function bootstrap() {
     }),
   );
   const PORT = configService.getOrThrow<number>('PORT');
-  await app.listen(PORT, () => console.log(`Server running on PORT ${PORT}`));
+
+  // Optionally, read HOST if you need to override binding interface
+  const HOST = configService.get<string>('HOST', '0.0.0.0');
+
+  console.log(`▶︎ ENV PORT: ${configService.get('PORT')}`); // for debugging
+  console.log(`✔︎ Server will bind to: ${HOST}:${PORT}`);
+
+  await app.listen(PORT, HOST);
+  console.log(`✔︎ Nest application listening on ${HOST}:${PORT}`);
 }
 bootstrap();
