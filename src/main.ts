@@ -25,7 +25,7 @@ async function bootstrap() {
       resave: false,
       saveUninitialized: false,
       cookie: {
-        httpOnly: true,
+        // httpOnly: true,
         secure: configService.get<string>('NODE_ENV') === 'production',
         sameSite: 'lax',
         maxAge: 1000 * 60 * 15,
