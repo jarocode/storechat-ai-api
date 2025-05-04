@@ -36,19 +36,38 @@ export class AuthController {
     @Session() session: Record<string, any>,
     @Res() res: Response,
   ) {
-    // 1. generate & store state
+    // // 1. generate & store state
+    // const state = randomBytes(16).toString('hex');
+    // session.shopifyState = state;
+
+    // // 2. build auth URL
+    // const params = new URLSearchParams({
+    //   client_id: this.config.getOrThrow('SHOPIFY_CLIENT_ID'),
+    //   scope: this.config.getOrThrow('SHOPIFY_SCOPES'),
+    //   redirect_uri: this.config.getOrThrow('SHOPIFY_REDIRECT_URI'),
+    //   state,
+    // }).toString();
+
+    // res.redirect(`https://${shop}/admin/oauth/authorize?${params}`);
+
     const state = randomBytes(16).toString('hex');
     session.shopifyState = state;
 
-    // 2. build auth URL
-    const params = new URLSearchParams({
-      client_id: this.config.getOrThrow('SHOPIFY_CLIENT_ID'),
-      scope: this.config.getOrThrow('SHOPIFY_SCOPES'),
-      redirect_uri: this.config.getOrThrow('SHOPIFY_REDIRECT_URI'),
-      state,
-    }).toString();
+    // make sure the session is written before we redirect
+    session.save((err: any) => {
+      if (err) {
+        // handle error… perhaps log and return a 500
+        throw err;
+      }
+      const params = new URLSearchParams({
+        client_id: this.config.getOrThrow('SHOPIFY_CLIENT_ID'),
+        scope: this.config.getOrThrow('SHOPIFY_SCOPES'),
+        redirect_uri: this.config.getOrThrow('SHOPIFY_REDIRECT_URI'),
+        state,
+      }).toString();
 
-    res.redirect(`https://${shop}/admin/oauth/authorize?${params}`);
+      res.redirect(`https://${shop}/admin/oauth/authorize?${params}`);
+    });
   }
 
   @Get('shopify/callback')
