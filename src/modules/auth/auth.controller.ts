@@ -3,15 +3,19 @@ import {
   Controller,
   Get,
   Logger,
+  Post,
   Query,
+  Req,
   Res,
   Session,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { randomBytes } from 'crypto';
 import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -28,20 +32,6 @@ export class AuthController {
     @Session() session: Record<string, any>,
     @Res() res: Response,
   ) {
-    // // 1. generate & store state
-    // const state = randomBytes(16).toString('hex');
-    // session.shopifyState = state;
-
-    // // 2. build auth URL
-    // const params = new URLSearchParams({
-    //   client_id: this.config.getOrThrow('SHOPIFY_CLIENT_ID'),
-    //   scope: this.config.getOrThrow('SHOPIFY_SCOPES'),
-    //   redirect_uri: this.config.getOrThrow('SHOPIFY_REDIRECT_URI'),
-    //   state,
-    // }).toString();
-
-    // res.redirect(`https://${shop}/admin/oauth/authorize?${params}`);
-
     const state = randomBytes(16).toString('hex');
     session.shopifyState = state;
 
@@ -112,5 +102,24 @@ export class AuthController {
     // 8. redirect back to your Next.js onboarding page
     res.redirect(`${this.frontendURL}/onboarding`);
     this.logger.log('shopify authentication flow completed successfully');
+  }
+
+  // --- a protected route that returns the current shop ---
+  @UseGuards(JwtAuthGuard)
+  @Get('shops/me')
+  getCurrentShop(@Req() req: Request) {
+    // req.shop was set by JwtAuthGuard
+    return { shop: (req as any).shop };
+  }
+  // --- logout endpoint ---
+  @Post('auth/logout')
+  logout(@Res() res: Response) {
+    // clear the cookie on the client
+    res.clearCookie('jwt', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+    });
+    return res.json({ message: 'Logged out' });
   }
 }
