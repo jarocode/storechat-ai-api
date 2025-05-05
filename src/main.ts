@@ -17,7 +17,12 @@ async function bootstrap() {
     'NODE_ENV',
   );
 
-  // 1. Enable CORS if any front-end is on a different origin
+  //Trust the proxy before any middleware that relies on req.secure / req.ip
+  if (configService.getOrThrow<string>('NODE_ENV') === 'production') {
+    app.set('trust proxy', 1);
+  }
+
+  //  Enable CORS if any front-end is on a different origin
   app.enableCors({
     origin: configService.getOrThrow<string>('FRONTEND_URL'),
     credentials: true,
@@ -38,11 +43,6 @@ async function bootstrap() {
       },
     }),
   );
-
-  // trust proxy only if behind one (e.g. Railway)
-  if (nodeEnv === 'production') {
-    app.set('trust proxy', 1);
-  }
 
   // Read PORT (Railway injects this automatically)
   const PORT = configService.getOrThrow<number>('PORT');
