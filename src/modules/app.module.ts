@@ -7,6 +7,8 @@ import { ShopModule } from './shop/shop.module';
 
 import { Shop } from './shop/entities/shop.entity';
 
+import { AppController } from './app.controller';
+
 @Module({
   imports: [
     AuthModule,
@@ -25,7 +27,7 @@ import { Shop } from './shop/entities/shop.entity';
     }),
     ShopModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [],
 })
 export class AppModule {}
