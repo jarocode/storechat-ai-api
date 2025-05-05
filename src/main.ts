@@ -12,14 +12,16 @@ async function bootstrap() {
   // grab ConfigService from Nest’s DI container
   const configService = app.get(ConfigService);
 
+  // these will throw an error and crash the app if missing:
+  const nodeEnv = configService.getOrThrow<'development' | 'production'>(
+    'NODE_ENV',
+  );
+
   // 1. Enable CORS if any front-end is on a different origin
   app.enableCors({
     origin: configService.getOrThrow<string>('FRONTEND_URL'),
     credentials: true,
   });
-
-  //To trust proxy
-  app.set('trust proxy', 1);
 
   app.use(cookieParser());
 
@@ -37,6 +39,11 @@ async function bootstrap() {
     }),
   );
 
+  // trust proxy only if behind one (e.g. Railway)
+  if (nodeEnv === 'production') {
+    app.set('trust proxy', 1);
+  }
+
   // Read PORT (Railway injects this automatically)
   const PORT = configService.getOrThrow<number>('PORT');
 
@@ -45,6 +52,7 @@ async function bootstrap() {
 
   console.log(`▶︎ ENV PORT: ${configService.get('PORT')}`); // for debugging
   console.log(`✔︎ Server will bind to: ${HOST}:${PORT}`);
+  console.log(`current environment: ${nodeEnv}`);
 
   await app.listen(PORT, HOST);
   console.log(`✔︎ Nest application listening on ${HOST}:${PORT}`);

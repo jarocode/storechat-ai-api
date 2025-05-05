@@ -12,6 +12,8 @@ import { Shop } from './shop/entities/shop.entity';
     AuthModule,
     ConfigModule.forRoot({
       isGlobal: true,
+      // only load .env files when NOT in production
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
       envFilePath: ['.env.local', '.env.development', '.env.production'],
     }),
     TypeOrmModule.forRoot({
