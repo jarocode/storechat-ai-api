@@ -36,6 +36,8 @@ async function bootstrap() {
       },
     }),
   );
+
+  // Read PORT (Railway injects this automatically)
   const PORT = configService.getOrThrow<number>('PORT');
 
   // Optionally, read HOST if you need to override binding interface
