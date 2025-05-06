@@ -57,38 +57,21 @@ export class AuthController {
   ): Promise<{ jwt: string }> {
     const { shop, code, state, hmac } = dto;
 
-    // 1. Validate state
-    // this.logger.log(
-    //   `Validating state… sent=${state} saved=${session.shopifyState}`,
-    // );
-    // if (state !== session.shopifyState) {
-    //   throw new UnauthorizedException('Invalid OAuth state');
-    // }
-
-    // 2. Verify HMAC
-    this.logger.log('Verifying HMAC…');
-    const params = { shop, code, state };
-    const message = Object.entries(params)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${k}=${v}`)
+    // 1. Verify HMAC & state exactly as before (no session)
+    this.logger.log(`Verifying HMAC for ${shop}`);
+    const message = [`code=${code}`, `shop=${shop}`, `state=${state}`]
+      .sort()
       .join('&');
-
-    const generated = this.auth.computeHmac(message);
-    if (!this.auth.timingSafeEqual(generated, hmac)) {
-      throw new UnauthorizedException('HMAC validation failed');
+    if (!this.auth.timingSafeEqual(this.auth.computeHmac(message), hmac)) {
+      throw new UnauthorizedException('Invalid HMAC');
     }
 
-    // 3. Exchange code → access token
-    this.logger.log('Exchanging code for access token…');
+    // 2. Exchange and persist
     const accessToken = await this.auth.fetchAccessToken(shop, code);
-
-    // 4. Persist shop + token
-    this.logger.log('Saving shop token to DB…');
     await this.auth.saveShop(shop, accessToken);
 
-    // 5. Sign & return JWT
+    // 3. Sign & return JWT
     const jwt = this.auth.signJwt({ shop });
-    this.logger.log('Callback-proxy completed, issuing JWT');
     return { jwt };
   }
 
