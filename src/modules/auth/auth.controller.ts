@@ -55,24 +55,34 @@ export class AuthController {
   async handleShopifyCallbackProxy(
     @Body() dto: ShopifyCallbackDto,
   ): Promise<{ jwt: string }> {
-    const { shop, code, state, hmac } = dto;
+    const { shop, code, state, hmac, timestamp } = dto;
 
     this.logger.log(`state: ${state}`);
 
     // 1. Verify HMAC & state exactly as before (no session)
     this.logger.log(`Verifying HMAC for ${shop}`);
-    const message = [`code=${code}`, `shop=${shop}`, `state=${state}`]
+
+    const paramsForHmac: Record<string, string> = {
+      code,
+      shop,
+      state,
+      timestamp,
+    };
+
+    // 2. Sort keys & join
+    const message = Object.keys(paramsForHmac)
       .sort()
+      .map((k) => `${k}=${paramsForHmac[k]}`)
       .join('&');
     if (!this.auth.timingSafeEqual(this.auth.computeHmac(message), hmac)) {
       throw new UnauthorizedException('Invalid HMAC');
     }
 
-    // 2. Exchange and persist
+    // 3. Exchange and persist
     const accessToken = await this.auth.fetchAccessToken(shop, code);
     await this.auth.saveShop(shop, accessToken);
 
-    // 3. Sign & return JWT
+    // 4. Sign & return JWT
     const jwt = this.auth.signJwt({ shop });
     return { jwt };
   }
