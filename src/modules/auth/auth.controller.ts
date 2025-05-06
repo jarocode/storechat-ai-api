@@ -57,6 +57,8 @@ export class AuthController {
   ): Promise<{ jwt: string }> {
     const { shop, code, state, hmac } = dto;
 
+    this.logger.log(`state: ${state}`);
+
     // 1. Verify HMAC & state exactly as before (no session)
     this.logger.log(`Verifying HMAC for ${shop}`);
     const message = [`code=${code}`, `shop=${shop}`, `state=${state}`]
