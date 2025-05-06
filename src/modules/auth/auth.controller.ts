@@ -14,7 +14,6 @@ import { Response } from 'express';
 import { randomBytes } from 'crypto';
 import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
-import { ShopifyCallbackDto } from './dtos/shopify-callback.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -53,30 +52,34 @@ export class AuthController {
 
   @Post('shopify/callback-proxy')
   async handleShopifyCallbackProxy(
-    @Body() dto: ShopifyCallbackDto,
+    @Body() params: Record<string, string>,
   ): Promise<{ jwt: string }> {
-    const { shop, code, state, hmac, timestamp } = dto;
+    const { hmac, state, shop, code, timestamp } = params;
+    // 1. Clone & drop the signature fields
+    const map = { ...params };
+    delete map.hmac;
+    delete map.signature;
 
     this.logger.log(`state: ${state}`);
+    this.logger.log(`timestamp: ${timestamp}`);
 
     // 1. Verify HMAC & state exactly as before (no session)
     this.logger.log(`Verifying HMAC for ${shop}`);
 
-    const paramsForHmac: Record<string, string> = {
-      code,
-      shop,
-      state,
-      timestamp,
-    };
-
-    // 2. Sort keys & join
-    const message = Object.keys(paramsForHmac)
+    // 2. Build the “key=val” string
+    const message = Object.keys(map)
       .sort()
-      .map((k) => `${k}=${paramsForHmac[k]}`)
+      .map((k) => `${k}=${map[k]}`)
       .join('&');
-    if (!this.auth.timingSafeEqual(this.auth.computeHmac(message), hmac)) {
-      throw new UnauthorizedException('Invalid HMAC');
+
+    this.logger.log('HMAC payload:', message);
+    this.logger.log('Incoming hmac:', hmac);
+
+    const generated = this.auth.computeHmac(message);
+    if (!this.auth.timingSafeEqual(generated, hmac)) {
+      throw new UnauthorizedException('HMAC validation failed');
     }
+    this.logger.log('HMAC validated successfully');
 
     // 3. Exchange and persist
     const accessToken = await this.auth.fetchAccessToken(shop, code);
