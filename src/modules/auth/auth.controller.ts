@@ -54,17 +54,16 @@ export class AuthController {
   @Post('shopify/callback-proxy')
   async handleShopifyCallbackProxy(
     @Body() dto: ShopifyCallbackDto,
-    @Session() session: Record<string, any>,
   ): Promise<{ jwt: string }> {
     const { shop, code, state, hmac } = dto;
 
     // 1. Validate state
-    this.logger.log(
-      `Validating state… sent=${state} saved=${session.shopifyState}`,
-    );
-    if (state !== session.shopifyState) {
-      throw new UnauthorizedException('Invalid OAuth state');
-    }
+    // this.logger.log(
+    //   `Validating state… sent=${state} saved=${session.shopifyState}`,
+    // );
+    // if (state !== session.shopifyState) {
+    //   throw new UnauthorizedException('Invalid OAuth state');
+    // }
 
     // 2. Verify HMAC
     this.logger.log('Verifying HMAC…');
