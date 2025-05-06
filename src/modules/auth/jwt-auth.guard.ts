@@ -7,7 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { JwtService, TokenExpiredError } from '@nestjs/jwt';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -16,8 +16,8 @@ export class JwtAuthGuard implements CanActivate {
 
   canActivate(ctx: ExecutionContext): boolean {
     const req = ctx.switchToHttp().getRequest<Request>();
-    const res = ctx.switchToHttp().getResponse<Response>();
-    const token = req.cookies?.jwt;
+
+    const token = this.extractToken(req);
     this.logger.log('jwt cookie token:', token);
     if (!token) throw new UnauthorizedException('Not authenticated');
 
@@ -30,14 +30,22 @@ export class JwtAuthGuard implements CanActivate {
     } catch (err) {
       // If it’s an expired token, clear the cookie so the client stops sending it
       if (err instanceof TokenExpiredError) {
-        res.clearCookie('jwt', {
-          httpOnly: true,
-          secure: true,
-          sameSite: 'strict',
-        });
         throw new UnauthorizedException('Session expired, please log in again');
       }
       throw new UnauthorizedException('Invalid authentication token');
     }
+  }
+
+  private extractToken(req: Request): string {
+    // 1) Try the cookie (httpOnly, set by your Next.js BFF)
+    if (req.cookies?.jwt) {
+      return req.cookies.jwt;
+    }
+    // 2) Fallback to Authorization header (optional)
+    const auth = req.headers.authorization;
+    if (auth?.startsWith('Bearer ')) {
+      return auth.split(' ')[1];
+    }
+    throw new UnauthorizedException('Authentication token not found');
   }
 }

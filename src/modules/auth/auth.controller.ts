@@ -1,5 +1,6 @@
 // src/auth/auth.controller.ts
 import {
+  Body,
   Controller,
   Get,
   Logger,
@@ -13,6 +14,7 @@ import { Response } from 'express';
 import { randomBytes } from 'crypto';
 import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
+import { ShopifyCallbackDto } from './dtos/shopify-callback.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -49,56 +51,46 @@ export class AuthController {
     });
   }
 
-  @Get('shopify/callback')
-  async handleShopifyCallback(
-    @Query('shop') shop: string,
-    @Query('code') code: string,
-    @Query('state') state: string,
-    @Query('hmac') hmac: string,
+  @Post('shopify/callback-proxy')
+  async handleShopifyCallbackProxy(
+    @Body() dto: ShopifyCallbackDto,
     @Session() session: Record<string, any>,
-    @Res() res: Response,
-  ) {
-    // 3. validate state
-    this.logger.log('validating state...');
-    this.logger.log('passed state:', state);
-    this.logger.log('saved session state:', session?.shopifyState);
-    if (state !== session?.shopifyState) {
-      throw new UnauthorizedException('Invalid state');
-    }
-    this.logger.log('state validated successfully');
+  ): Promise<{ jwt: string }> {
+    const { shop, code, state, hmac } = dto;
 
-    // 4. verify HMAC
-    this.logger.log('validating HMAC...');
-    const map = { ...res.req.query };
-    delete map.hmac;
-    delete map.signature;
-    const message = Object.keys(map)
-      .sort()
-      .map((key) => `${key}=${map[key]}`)
+    // 1. Validate state
+    this.logger.log(
+      `Validating state… sent=${state} saved=${session.shopifyState}`,
+    );
+    if (state !== session.shopifyState) {
+      throw new UnauthorizedException('Invalid OAuth state');
+    }
+
+    // 2. Verify HMAC
+    this.logger.log('Verifying HMAC…');
+    const params = { shop, code, state };
+    const message = Object.entries(params)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${k}=${v}`)
       .join('&');
 
     const generated = this.auth.computeHmac(message);
     if (!this.auth.timingSafeEqual(generated, hmac)) {
       throw new UnauthorizedException('HMAC validation failed');
     }
-    this.logger.log('HMAC validated successfully');
 
-    // 5. exchange code for access token
+    // 3. Exchange code → access token
+    this.logger.log('Exchanging code for access token…');
     const accessToken = await this.auth.fetchAccessToken(shop, code);
 
-    // 6. persist shop + token in your DB
-    this.logger.log('saving shop token data to DB...');
+    // 4. Persist shop + token
+    this.logger.log('Saving shop token to DB…');
     await this.auth.saveShop(shop, accessToken);
-    this.logger.log('Shop token data successfully saved to DB');
 
-    // 7. set a session or JWT cookie for your own auth
-    this.logger.log('setting jwt cookie to auth...');
+    // 5. Sign & return JWT
     const jwt = this.auth.signJwt({ shop });
-    res.cookie('jwt', jwt, { httpOnly: true, secure: true });
-
-    // 8. redirect back to your Next.js onboarding page
-    res.redirect(`${this.frontendURL}/onboarding`);
-    this.logger.log('shopify authentication flow completed successfully');
+    this.logger.log('Callback-proxy completed, issuing JWT');
+    return { jwt };
   }
 
   // --- logout endpoint ---
