@@ -5,17 +5,14 @@ import {
   Logger,
   Post,
   Query,
-  Req,
   Res,
   Session,
   UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { randomBytes } from 'crypto';
 import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
-import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -104,15 +101,8 @@ export class AuthController {
     this.logger.log('shopify authentication flow completed successfully');
   }
 
-  // --- a protected route that returns the current shop ---
-  @UseGuards(JwtAuthGuard)
-  @Get('shops/me')
-  getCurrentShop(@Req() req: Request) {
-    // req.shop was set by JwtAuthGuard
-    return { shop: (req as any).shop };
-  }
   // --- logout endpoint ---
-  @Post('auth/logout')
+  @Post('logout')
   logout(@Res() res: Response) {
     // clear the cookie on the client
     res.clearCookie('jwt', {

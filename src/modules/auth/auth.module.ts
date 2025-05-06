@@ -17,13 +17,14 @@ import { Shop } from '../shop/entities/shop.entity';
       imports: [ConfigModule], // import ConfigModule so you can inject ConfigService
       inject: [ConfigService], // inject ConfigService into the factory
       useFactory: (config: ConfigService) => ({
+        global: true,
         secret: config.getOrThrow('JWT_SECRET'),
         signOptions: { expiresIn: '30d' },
       }),
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
-  exports: [JwtAuthGuard],
+  providers: [AuthService, JwtAuthGuard],
+  exports: [],
 })
 export class AuthModule {}
