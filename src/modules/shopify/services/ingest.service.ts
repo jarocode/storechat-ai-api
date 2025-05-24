@@ -18,9 +18,9 @@ export class IngestService {
 
   constructor(@InjectQueue('ingest') private readonly queue: Queue) {}
 
-  async enqueueAll(shop: string, token: string) {
+  async enqueueAll(shop: string) {
     for (const r of this.resources)
-      await this.queue.add(r, { shop, token, resource: r });
+      await this.queue.add(r, { shop, resource: r });
   }
 
   async getProgress(shop: string) {

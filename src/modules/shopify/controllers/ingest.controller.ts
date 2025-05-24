@@ -7,8 +7,8 @@ export class IngestController {
   constructor(private readonly ingest: IngestService) {}
 
   @Post('all')
-  async kickOff(@Body() b: { shop: string; token: string }) {
-    await this.ingest.enqueueAll(b.shop, b.token);
+  async kickOff(@Body() b: { shop: string }) {
+    await this.ingest.enqueueAll(b.shop);
     return { status: 'started' };
   }
 

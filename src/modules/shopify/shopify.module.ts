@@ -7,8 +7,10 @@ import { IngestProcessor } from './processors/injest.processor';
 import { IngestController } from './controllers/ingest.controller';
 import { LangchainService } from './services/langchain.service';
 
+import { ShopModule } from '../shop/shop.module';
+
 @Module({
-  imports: [BullModule.registerQueue({ name: 'ingest' })],
+  imports: [BullModule.registerQueue({ name: 'ingest' }), ShopModule],
   providers: [
     BulkService,
     ProcessorService,
