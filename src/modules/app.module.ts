@@ -8,6 +8,7 @@ import { ShopModule } from './shop/shop.module';
 import { Shop } from './shop/entities/shop.entity';
 
 import { AppController } from './app.controller';
+import { ShopifyModule } from './shopify/shopify.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AppController } from './app.controller';
       synchronize: true, // turn off in production
     }),
     ShopModule,
+    ShopifyModule,
   ],
   controllers: [AppController],
   providers: [],

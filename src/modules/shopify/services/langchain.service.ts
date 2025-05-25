@@ -9,7 +9,7 @@ import { Document } from 'langchain/document';
 export class LangchainService {
   private supa = createClient(
     process.env.SUPABASE_URL!,
-    process.env.SUPABASE_KEY!,
+    process.env.SUPABASE_PRIVATE_KEY!,
   );
   private embed = new OpenAIEmbeddings();
   private splitter = new CharacterTextSplitter({

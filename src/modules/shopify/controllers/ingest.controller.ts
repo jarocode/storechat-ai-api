@@ -1,10 +1,18 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get } from '@nestjs/common';
 
 import { IngestService } from '../services/ingest.service';
 
 @Controller('shopify/ingest')
 export class IngestController {
   constructor(private readonly ingest: IngestService) {}
+
+  @Get('health-check')
+  healthCheck() {
+    return {
+      status: true,
+      message: 'Ingest controller reachable!',
+    };
+  }
 
   @Post('all')
   async kickOff(@Body() b: { shop: string }) {
