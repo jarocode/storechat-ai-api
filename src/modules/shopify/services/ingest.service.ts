@@ -1,5 +1,5 @@
 // src/shopify/ingest.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 
@@ -16,11 +16,15 @@ export class IngestService {
     'blogArticles',
   ] as const;
 
+  private readonly logger = new Logger(IngestService.name);
+
   constructor(@InjectQueue('ingest') private readonly queue: Queue) {}
 
   async enqueueAll(shop: string) {
-    for (const r of this.resources)
+    for (const r of this.resources) {
+      this.logger.log(`adding resource: ${r} to queue`);
       await this.queue.add(r, { shop, resource: r });
+    }
   }
 
   async getProgress(shop: string) {

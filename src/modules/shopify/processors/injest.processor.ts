@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { Processor, Process } from '@nestjs/bull';
+import { Processor, Process, OnQueueActive } from '@nestjs/bull';
 import { Job } from 'bull';
 import { BulkService } from '../services/bulk.service';
 import { ShopService } from 'src/modules/shop/shop.service';
@@ -27,5 +27,12 @@ export class IngestProcessor {
     this.logger.log('payload:', payload);
     // const docs = this.proc.mapResourceToDocs(shop, resource, payload);
     // await this.lc.ingest(docs);
+  }
+
+  @OnQueueActive()
+  onActive(job: Job) {
+    this.logger.log(
+      `Processing job ${job.id} of type ${job.name} with data: ${job.data?.resource}...`,
+    );
   }
 }

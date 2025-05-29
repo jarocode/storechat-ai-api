@@ -1,9 +1,11 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import { Controller, Post, Body, Get, Logger } from '@nestjs/common';
 
 import { IngestService } from '../services/ingest.service';
 
 @Controller('shopify/ingest')
 export class IngestController {
+  private readonly logger = new Logger(IngestController.name);
+
   constructor(private readonly ingest: IngestService) {}
 
   @Get('health-check')
@@ -16,6 +18,7 @@ export class IngestController {
 
   @Post('all')
   async kickOff(@Body() b: { shop: string }) {
+    this.logger.log('enqueueing resource ingestion jobs...');
     await this.ingest.enqueueAll(b.shop);
     return { status: 'started' };
   }
