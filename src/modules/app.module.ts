@@ -26,8 +26,9 @@ import { ShopifyModule } from './shopify/shopify.module';
       inject: [ConfigService], // inject the service
       useFactory: (config: ConfigService) => ({
         redis: {
-          host: config.getOrThrow('REDIS_HOST'),
-          port: config.getOrThrow('REDIS_PORT'),
+          url: config.getOrThrow('REDIS_URL'),
+          host: config.getOrThrow('REDISHOST'),
+          port: config.getOrThrow('REDISPORT'),
         },
       }),
     }),
